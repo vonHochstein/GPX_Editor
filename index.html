@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>GPX Editor – Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 0.5rem 1rem;
+      background: #222;
+      color: #f5f5f5;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      margin: 0;
+      margin-right: 1rem;
+      white-space: nowrap;
+    }
+
+    header label {
+      font-size: 0.9rem;
+    }
+
+    header input[type="file"] {
+      font-size: 0.85rem;
+    }
+
+    header button,
+    header select,
+    header input[type="text"] {
+      font-size: 0.9rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    #map {
+      flex: 0 0 40%;
+      min-width: 30%;
+    }
+
+    #side-panel {
+      flex: 1 1 60%;
+      width: 60%;
+      min-width: 50%;
+      max-width: 70%;
+      border-left: 1px solid #ccc;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #meta-panel {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #ccc;
+      background: #f7f7f7;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    #meta-panel h2 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      align-items: center;
+    }
+
+    .meta-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .meta-row input[type="text"] {
+      padding: 0.2rem 0.3rem;
+      font-size: 0.85rem;
+      min-width: 7rem;
+    }
+
+    #meta-desc {
+      width: 100%;
+      min-height: 2.5rem;
+      font-size: 0.85rem;
+      padding: 0.25rem 0.3rem;
+      resize: vertical;
+    }
+
+    #tabs {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+    }
+
+    #tabs button {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      border: none;
+      border-right: 1px solid #ccc;
+      background: #f2f2f2;
+      cursor: pointer;
+    }
+
+    #tabs button.active {
+      background: #fff;
+      font-weight: 600;
+      border-bottom: 2px solid #0077cc;
+    }
+
+    /* neue Toolbar für die Löschbuttons – immer sichtbar */
+    #table-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #ccc;
+      background: #f2f2f2;
+      font-size: 0.85rem;
+    }
+
+    #table-toolbar button {
+      font-size: 0.85rem;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+    }
+
+    #tables-container {
+      flex: 1;
+      overflow: auto;
+      padding: 0.5rem;
+      background: #fff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.8rem;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.25rem 0.4rem;
+      text-align: left;
+    }
+
+    th {
+      background: #f8f8f8;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr.selected {
+      background: #e0f1ff;
+    }
+
+    td[contenteditable="true"] {
+      background: #fcfcff;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-left: auto;
+      align-items: center;
+    }
+
+    .controls-row > * {
+      font-size: 0.85rem;
+    }
+
+    .mode-toggle {
+      border: 1px solid #888;
+      border-radius: 4px;
+      background: #444;
+      color: #f5f5f5;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .mode-toggle.active {
+      background: #00a000;
+      color: #fff;
+      box-shadow: 0 0 0 2px rgba(0, 160, 0, 0.4);
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        flex-direction: column;
+      }
+      #map {
+        height: 40vh;
+      }
+      #side-panel {
+        width: 100%;
+        max-width: 100%;
+        border-left: none;
+        border-top: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GPX Editor</h1>
+
+    <label>
+      GPX laden:
+      <input type="file" id="gpx-file-input" accept=".gpx,application/gpx+xml" />
+    </label>
+
+    <div class="controls-row">
+      <label>
+        Track:
+        <select id="track-select"></select>
+      </label>
+
+      <label>
+        Name:
+        <input type="text" id="track-name-input" placeholder="Trackname" />
+      </label>
+
+      <button id="new-track-btn" type="button">
+        Neuen Track erstellen
+      </button>
+      <button id="delete-track-btn" type="button">
+        Aktuellen Track löschen
+      </button>
+
+      <label>
+        Dateiname:
+        <input type="text" id="file-name-input" placeholder="edited.gpx" />
+      </label>
+
+      <button id="add-trackpoint-btn" type="button" class="mode-toggle">
+        Trackpunkte erfassen
+      </button>
+      <button id="add-waypoint-btn" type="button" class="mode-toggle">
+        Waypoints erfassen
+      </button>
+
+      <button id="download-btn" type="button">GPX herunterladen</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="map"></div>
+
+    <aside id="side-panel">
+      <div id="meta-panel">
+        <h2>GPX Metadaten</h2>
+        <div class="meta-row">
+          <label>
+            Version:
+            <input type="text" id="meta-version" />
+          </label>
+          <label>
+            Creator:
+            <input type="text" id="meta-creator" />
+          </label>
+        </div>
+        <div class="meta-row">
+          <label>
+            GPX-Name:
+            <input type="text" id="meta-name" style="min-width: 12rem;" />
+          </label>
+        </div>
+        <div class="meta-row" style="flex-direction: column; align-items: stretch;">
+          <label for="meta-desc">Beschreibung:</label>
+          <textarea id="meta-desc"></textarea>
+        </div>
+      </div>
+
+      <div id="tabs">
+        <button id="tab-trackpoints" class="active" type="button">Trackpunkte</button>
+        <button id="tab-waypoints" type="button">Waypoints</button>
+      </div>
+
+      <!-- neue fixe Toolbar mit Löschbuttons -->
+      <div id="table-toolbar">
+        <button id="delete-selected-trackpoints-btn" type="button">
+          Markierte Trackpunkte löschen
+        </button>
+        <button id="delete-selected-waypoints-btn" type="button">
+          Markierte Waypoints löschen
+        </button>
+      </div>
+
+      <div id="tables-container">
+        <div id="trackpoints-section">
+          <div id="trackpoints-table-wrapper"></div>
+        </div>
+
+        <div id="waypoints-section" style="display:none;">
+          <div id="waypoints-table-wrapper"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script src="gpx-editor.js"></script>
+</body>
+</html>
